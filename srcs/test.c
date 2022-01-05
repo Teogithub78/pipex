@@ -61,6 +61,28 @@ int	split_args(char ****args, char **av, int ac)
 	return (0);
 }
 
+int	check_access(char **chemins, char **args)
+{
+	int	i;
+	char *str;
+	int	retour;
+
+	i = 0;
+	str = ft_strjoin(chemins[i], args[0]);
+	while (chemins[i])
+	{
+		retour = access(str, X_OK);
+		printf("ACCESS TEST RETOUR == %d\n", retour);
+		if (retour == 0)
+			return (i);
+		i++;
+		if (chemins[i] == NULL)
+			return (perror);
+		str = ft_strjoin(chemins[i], args[0]);
+
+	}
+}
+
 int	main(int ac, char **av, char **envp)
 {
 	char **chemins;
@@ -122,7 +144,7 @@ int	main(int ac, char **av, char **envp)
 
 /*
 ACCESS == int access(const char* PATHNAME, int MODE);
-	-inc <unistd.h>
+	- inc <unistd.h>
 	- vérifie si le processus qui appelle access peut acceder au fichier PATHNAME
 	- MODE == F_OK (check si f existe), R_OK/W_OK/X_OK (check si ficher writable)
 	- verif faite avec le user UID ou GID, pas l'ID du programme
