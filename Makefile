@@ -1,14 +1,14 @@
 NAME = pipex
-NAME_B =
+#NAME_B =
 CC = gcc
 CFLAGS = -Wall -Werror -Wextra
 PATH_SRC = ./srcs/
 PATH_INC = ./inc/
-PATH_BONUS = ./bonus/
-SRC =
-SRC_B =
+#PATH_BONUS = ./bonus/
+SRC = ./srcs/test.c \
+#SRC_B =
 OBJ = $(SRC:.c=.o)
-OBJ_B = $(SRC_B:.c=.o)
+#OBJ_B = $(SRC_B:.c=.o)
 
 
 

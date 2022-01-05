@@ -3,54 +3,118 @@
 #include "../inc/pipex.h"
 #include <fcntl.h>
 
-
-
-
-char	**path_table(char **chemins, char **envp)
+int		path_table(char ***chemins, char **envp)
 {
 	while(*envp)
 	{
 		if (ft_strncmp(*envp, "PATH", 4) == 0)
 		{
-			chemins = ft_split_plus((*envp) + 5, ':');
+			*chemins = ft_split_plus((*envp) + 5, ':');
 			if (chemins == NULL)
-				return (NULL);
-			return (chemins);
+				return (ERROR);
+			return (0);
 		}
 		envp++;
 	}
-	return (chemins);
+	return (ERROR);
 }
 
-int		parser_flags(char **av)
+
+// int	pipex(char **av, char **chemins, char **envp)
+// {
+// 	char	*str;
+// 	int	i;
+// 	int	fd[2];
+// 	int pid[2];
+
+// 	if (pipe(fd) == -1)
+// 		return (ERROR);
+
+// 	pid1;
+// 	i = 0;
+// 	str = ft_strjoin(chemins[i], av[2]);
+// 	while (execve(str, av, envp) == -1)
+// 	{
+// 		free(str);
+// 		if (!chemins[++i])
+// 			break;
+// 		str = ft_strjoin(chemins[i], av[2]);
+// 	}
+// 	free(str);
+// 	return (0);
+// }
+
+int	split_args(char ****args, char **av, int ac)
 {
-	ft_split(av[2], ' ');
+	int	i;
+
+	i = 0;
+	*args = malloc(sizeof(char **) * ac);
+	if (args == NULL)
+		return (ERROR);
+	while (i < ac)
+	{
+		(*args)[i] = ft_split(av[i + 1], ' ');
+		i++;
+	}
+	(*args)[i] = NULL;
+	return (0);
 }
 
 int	main(int ac, char **av, char **envp)
 {
 	char **chemins;
+	char ***args;
 	int	i;
-	int	fd;
+//	int	fd;
 
-	i = 0;
-	(void)av;
+	//if (ac != 5)
+	//	return (0);
+	i = 1;
 	chemins = NULL;
-	(void)ac;
-	fd = open(av[1], O_RDONLY);
-	if (fd == ERROR)
+
+	if (split_args(&args, av, ac) == ERROR)
+		return (ERROR);
+
+	// fd = open(av[1], O_RDONLY);
+	// if (fd == ERROR)
+	// {
+	// 	perror(av[1]);
+	// 	return (0);
+	// }
+
+	if (path_table(&chemins, envp) == ERROR)
 	{
-		perror(av[1]);
-		return (0);
+		free(chemins);
+		return (ERROR);
 	}
-	chemins = path_table(chemins, envp);
+
 	while (chemins[i])
 	{
 		printf("CHEMINS ==");
 		printf("%s\n", chemins[i]);
 		i++;
 	}
-
+//	pipex(av, chemins, envp);
+	i = 0;
+	int j = 0;
+	while (args[i])
+	{
+		printf("ARG |%d| == %s\n", i, args[i][j]);
+		j++;
+		if (args[i][j] == NULL)
+		{
+			i++;
+			j = 0;
+		}
+	}
+	i = 0;
+	while (args[i])
+	{
+		free_tabs(args[i]);
+		i++;
+	}
+	free(args);
 	free_tabs(chemins);
 	return (0);
 }
