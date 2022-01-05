@@ -77,10 +77,10 @@ int	check_access(char **chemins, char **args)
 			return (i);
 		i++;
 		if (chemins[i] == NULL)
-			return (perror);
+			return (ERROR);
 		str = ft_strjoin(chemins[i], args[0]);
-
 	}
+	return(ERROR);
 }
 
 int	main(int ac, char **av, char **envp)
@@ -130,6 +130,10 @@ int	main(int ac, char **av, char **envp)
 			j = 0;
 		}
 	}
+	if (check_access(chemins, args[0]) == ERROR)
+		printf("ERROR\n");
+	else
+		printf("SUCCESS\n");
 	i = 0;
 	while (args[i])
 	{
