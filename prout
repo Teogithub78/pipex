@@ -1,0 +1,5 @@
+PATH_SRC = ./srcs/
+SRC =
+SRC_B =
+OBJ = $(SRC:.c=.o)
+OBJ_B = $(SRC_B:.c=.o)
