@@ -2,6 +2,32 @@
 #include "../libft/libft.h"
 #include "../inc/pipex.h"
 #include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+
+int	check_access_program(char **chemins, char **args)
+{
+	int	i;
+	char *str;
+	int	retour;
+
+	i = 0;
+	str = ft_strjoin(chemins[i], args[0]);
+	while (chemins[i])
+	{
+		retour = access(str, X_OK);
+		free(str);
+		if (retour == 0)
+			return (i);
+		i++;
+		if (chemins[i] == NULL)
+			return (i - 1);
+		str = ft_strjoin(chemins[i], args[0]);
+	}
+	if (str != NULL)
+		free(str);
+	return(ERROR);
+}
 
 int		path_table(char ***chemins, char **envp)
 {
@@ -19,30 +45,47 @@ int		path_table(char ***chemins, char **envp)
 	return (ERROR);
 }
 
+//Il faut initialiser et open un fichier
 
-// int	pipex(char **av, char **chemins, char **envp)
-// {
-// 	char	*str;
-// 	int	i;
-// 	int	fd[2];
-// 	int pid[2];
+int	first_child(char ***args, char **chemins, char **envp, int good_path, int *fd)
+{
+		int	file_fd_input;
+		char	*str;
+		int	i;
 
-// 	if (pipe(fd) == -1)
-// 		return (ERROR);
+		file_fd_input = open(args[0][0], O_RDONLY);
+		if (file_fd_input == -1)
+			exit(0);
+		dup2(file_fd_input, 0);
+		close(file_fd_input);
+		i = 1;
+		str = ft_strjoin(chemins[good_path], args[1][0]);
+		dup2(fd[1], STDOUT_FILENO);
+		close(fd[0]);
+		close(fd[1]);
+		i = execve(str, args[i], envp);
+		exit(0);
 
-// 	pid1;
-// 	i = 0;
-// 	str = ft_strjoin(chemins[i], av[2]);
-// 	while (execve(str, av, envp) == -1)
-// 	{
-// 		free(str);
-// 		if (!chemins[++i])
-// 			break;
-// 		str = ft_strjoin(chemins[i], av[2]);
-// 	}
-// 	free(str);
-// 	return (0);
-// }
+		return (ERROR);
+}
+
+int	last_child(char ***args, char **chemins, char **envp, int *fd)
+{
+	int	file_fd_output;
+	char	*str;
+	int	i;
+
+	dup2(fd[0], STDIN_FILENO);
+	close(fd[0]);
+	close(fd[1]);
+	file_fd_output = open(args[3][0], O_CREAT | O_WRONLY | O_TRUNC, 0644);
+	dup2(file_fd_output, STDOUT_FILENO);
+	i = check_access_program(chemins, args[2]);
+	str = ft_strjoin(chemins[i], args[2][0]);
+	i = execve(str, args[2], envp);
+	exit(0);
+}
+
 
 int	split_args(char ****args, char **av, int ac)
 {
@@ -52,7 +95,7 @@ int	split_args(char ****args, char **av, int ac)
 	*args = malloc(sizeof(char **) * ac);
 	if (args == NULL)
 		return (ERROR);
-	while (i < ac)
+	while (i < ac - 1)
 	{
 		(*args)[i] = ft_split(av[i + 1], ' ');
 		i++;
@@ -61,26 +104,30 @@ int	split_args(char ****args, char **av, int ac)
 	return (0);
 }
 
-int	check_access(char **chemins, char **args)
-{
-	int	i;
-	char *str;
-	int	retour;
 
-	i = 0;
-	str = ft_strjoin(chemins[i], args[0]);
-	while (chemins[i])
+
+int	pipex(char ***args, char **chemins, char **envp, int good_path)
+{
+	int	fd[2];
+	int pid[2];
+
+	pipe(fd);
+	pid[0] = fork();
+	if (pid[0] == 0)
 	{
-		retour = access(str, X_OK);
-		printf("ACCESS TEST RETOUR == %d\n", retour);
-		if (retour == 0)
-			return (i);
-		i++;
-		if (chemins[i] == NULL)
-			return (ERROR);
-		str = ft_strjoin(chemins[i], args[0]);
+		first_child(args, chemins, envp, good_path, fd);
 	}
-	return(ERROR);
+	pid[1] = fork();
+
+	if (pid[1] == 0)
+	{
+		last_child(args, chemins, envp, fd);
+	}
+	close(fd[0]);
+	close(fd[1]);
+	waitpid(pid[0], NULL, 0);
+	waitpid(pid[1], NULL, 0);
+	return (0);
 }
 
 int	main(int ac, char **av, char **envp)
@@ -88,7 +135,6 @@ int	main(int ac, char **av, char **envp)
 	char **chemins;
 	char ***args;
 	int	i;
-//	int	fd;
 
 	//if (ac != 5)
 	//	return (0);
@@ -97,13 +143,6 @@ int	main(int ac, char **av, char **envp)
 
 	if (split_args(&args, av, ac) == ERROR)
 		return (ERROR);
-
-	// fd = open(av[1], O_RDONLY);
-	// if (fd == ERROR)
-	// {
-	// 	perror(av[1]);
-	// 	return (0);
-	// }
 
 	if (path_table(&chemins, envp) == ERROR)
 	{
@@ -117,7 +156,6 @@ int	main(int ac, char **av, char **envp)
 		printf("%s\n", chemins[i]);
 		i++;
 	}
-//	pipex(av, chemins, envp);
 	i = 0;
 	int j = 0;
 	while (args[i])
@@ -130,10 +168,16 @@ int	main(int ac, char **av, char **envp)
 			j = 0;
 		}
 	}
-	if (check_access(chemins, args[0]) == ERROR)
+	i = check_access_program(chemins, args[1]);
+	if (i == ERROR)
+	{
+	//	perror(NULL);
 		printf("ERROR\n");
+	}
 	else
 		printf("SUCCESS\n");
+	pipex(args, chemins, envp, i);
+	printf("prout");
 	i = 0;
 	while (args[i])
 	{
