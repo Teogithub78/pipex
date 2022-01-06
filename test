@@ -1,2 +1,1 @@
-SRC_B =
-OBJ_B = $(SRC_B:.c=.o)
+

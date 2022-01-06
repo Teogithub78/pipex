@@ -21,7 +21,7 @@ int	check_access_program(char **chemins, char **args)
 			return (i);
 		i++;
 		if (chemins[i] == NULL)
-			return (i - 1);
+			return (ERROR);
 		str = ft_strjoin(chemins[i], args[0]);
 	}
 	if (str != NULL)
@@ -44,8 +44,6 @@ int		path_table(char ***chemins, char **envp)
 	}
 	return (ERROR);
 }
-
-//Il faut initialiser et open un fichier
 
 int	first_child(char ***args, char **chemins, char **envp, int good_path, int *fd)
 {
@@ -104,8 +102,6 @@ int	split_args(char ****args, char **av, int ac)
 	return (0);
 }
 
-
-
 int	pipex(char ***args, char **chemins, char **envp, int good_path)
 {
 	int	fd[2];
@@ -130,54 +126,70 @@ int	pipex(char ***args, char **chemins, char **envp, int good_path)
 	return (0);
 }
 
-int	main(int ac, char **av, char **envp)
+int	setup_tabs(char ****args, char **av, int ac, char ***chemins, char **envp)
 {
-	char **chemins;
-	char ***args;
-	int	i;
-
-	//if (ac != 5)
-	//	return (0);
-	i = 1;
-	chemins = NULL;
-
 	if (split_args(&args, av, ac) == ERROR)
 		return (ERROR);
 
 	if (path_table(&chemins, envp) == ERROR)
 	{
 		free(chemins);
+		printf("PATH variable missing\n");
 		return (ERROR);
 	}
+	return (0);
+}
 
-	while (chemins[i])
-	{
-		printf("CHEMINS ==");
-		printf("%s\n", chemins[i]);
-		i++;
-	}
+int	main(int ac, char **av, char **envp)
+{
+	char **chemins;
+	char ***args;
+	int	i;
+
+	if (ac != 5)
+		return (printf("ERROR: Not enough arguments\n"));
+	chemins = NULL;
+	if (setup_tabs(&args, av, ac, &chemins, envp) == ERROR)
+	 	return (ERROR);
+
+	// if (split_args(&args, av, ac) == ERROR)
+	// 	return (ERROR);
+
+	// if (path_table(&chemins, envp) == ERROR)
+	// {
+	// 	free(chemins);
+	// 	return (ERROR);
+	// }
+
+	// while (chemins[i])
+	// {
+	// 	printf("CHEMINS ==");
+	// 	printf("%s\n", chemins[i]);
+	// 	i++;
+	// }
 	i = 0;
-	int j = 0;
-	while (args[i])
-	{
-		printf("ARG |%d| == %s\n", i, args[i][j]);
-		j++;
-		if (args[i][j] == NULL)
-		{
-			i++;
-			j = 0;
-		}
-	}
+	//int j = 0;
+	// while (args[i])
+	// {
+	// 	printf("ARG |%d| == %s\n", i, args[i][j]);
+	// 	j++;
+	// 	if (args[i][j] == NULL)
+	// 	{
+	// 		i++;
+	// 		j = 0;
+	// 	}
+	// }
 	i = check_access_program(chemins, args[1]);
 	if (i == ERROR)
 	{
-	//	perror(NULL);
-		printf("ERROR\n");
+		perror(NULL);
+	//	printf("ERROR\n");
 	}
+	//else
+	//	printf("SUCCESS\n");
 	else
-		printf("SUCCESS\n");
-	pipex(args, chemins, envp, i);
-	printf("prout");
+		pipex(args, chemins, envp, i);
+	//printf("prout");
 	i = 0;
 	while (args[i])
 	{
